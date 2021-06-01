@@ -5,7 +5,7 @@ you should get a more consistent bhop + it can write into the game.
 
 how is it undetected?:
 
-- utilizes windows native functions to create a handle from another process.
+- utilizes windows native functions to create a handle from another process. (not a paste)
 - technically undetected for reading and both writing.
 
 how to use:
