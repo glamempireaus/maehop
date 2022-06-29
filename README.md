@@ -10,7 +10,7 @@ how is it undetected?:
 
 how to use:
 
-1. download the release https://github.com/dorrisdev/maehop-hijack/releases/ or build it yourself
+1. download the release https://github.com/glamempireaus/maehop-hijack/releases/ or build it yourself
 2. press f4
 3. farm some clips
 
