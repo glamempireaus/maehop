@@ -1,18 +1,16 @@
 # maehop (hijack)
 external bhop hack
 
-you should get a more consistent bhop + it can write into the game.
+how is it undetected?
 
-how is it undetected?:
-
-- utilizes windows native functions to create a handle from another process. (not a paste)
-- guaranteed undetection forever for both reading and both writing.
+- it utilizes windows native functions to create a handle from another process.
+- guaranteed undetection for both reading and both writing since VAC isn't kernal-level.
 
 how to use:
 
-1. download the release https://github.com/glamempireaus/maehop-hijack/releases/ or build it yourself
+1. download the release https://github.com/glamempireaus/maehop/releases/ or build it yourself
 2. press f4
-3. farm some clips
+3. profit
 
 how to setup:
 
