@@ -1,4 +1,4 @@
-# maehop (hijack)
+# maehop
 external bhop hack
 
 how is it undetected?
