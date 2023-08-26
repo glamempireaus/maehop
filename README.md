@@ -1,19 +1,15 @@
-# maehop
-external bhop hack
+# **MaeHop: External Bhop Hack**
 
-how is it undetected?
+### **Why is MaeHop Undetected?**
+- MaeHop leverages Windows native functions to create a handle from another process. 
+- It guarantees undetection for both reading and writing operations because VAC (Valve Anti-Cheat) is not kernel-level.
 
-- it utilizes windows native functions to create a handle from another process.
-- guaranteed undetection for both reading and both writing since VAC isn't kernal-level.
+### **Usage Instructions:**
+1. [Download the latest release](https://github.com/glamempireaus/maehop/releases/) or compile the source code yourself.
+2. Launch the application and press `F4`.
+3. Enjoy the benefits!
 
-how to use:
-
-1. download the release https://github.com/glamempireaus/maehop/releases/ or build it yourself
-2. press f4
-3. profit
-
-how to setup:
-
-1. configure your ide so you're using a multibyte character set.
-2. update the offets in main.h using an offset updater.
-3. build and run. 
+### **Setup Guide:**
+1. Ensure your Integrated Development Environment (IDE) is set to use a Multibyte Character Set.
+2. Update the offsets in `main.h` using a reliable offset updater tool.
+3. Compile, run, and you're all set.
