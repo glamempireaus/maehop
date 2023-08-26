@@ -14,7 +14,7 @@
 // Struct to hold game offsets
 struct ouroffsets
 {
-    uintptr_t dwLocalPlayer = 0xD892CC;
+    uintptr_t dwLocalPlayer = 0xD892CC; //TODO: Update this offset
     uintptr_t m_fFlags = 0x104; // TODO: Update this offset
     uintptr_t dwForceJump = 0x524BECC; // TODO: Update this offset
     DWORD procId;
