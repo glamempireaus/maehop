@@ -1,7 +1,7 @@
 # **maehop: External Bhop Hack**
 
-### **Why is MaeHop Undetected?**
-- MaeHop leverages Windows native functions to create a handle from another process. 
+### **Why is Maehop Undetected?**
+- Leverages Windows native functions to create a handle from another process. 
 - It guarantees undetection for both reading and writing operations because VAC (Valve Anti-Cheat) is not kernel-level.
 
 ### **Usage Instructions:**
