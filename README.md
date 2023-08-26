@@ -1,4 +1,4 @@
-# **MaeHop: External Bhop Hack**
+# **maehop: External Bhop Hack**
 
 ### **Why is MaeHop Undetected?**
 - MaeHop leverages Windows native functions to create a handle from another process. 
