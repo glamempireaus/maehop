@@ -1,5 +1,6 @@
 #pragma once
 
+// System Headers
 #include <iostream>
 #include <Windows.h>
 #include <TlHelp32.h>
@@ -10,20 +11,19 @@
 #include <amp.h>
 #include <thread>
 
+// Struct to hold game offsets
 struct ouroffsets
 {
-	uintptr_t dwLocalPlayer = 0xD892CC;
-
-	// bhop
-	uintptr_t m_fFlags = 0x104;
-	uintptr_t dwForceJump = 0x524BECC;
-
-	DWORD procId;
+    uintptr_t dwLocalPlayer = 0xD892CC;
+    uintptr_t m_fFlags = 0x104; // TODO: Update this offset
+    uintptr_t dwForceJump = 0x524BECC; // TODO: Update this offset
+    DWORD procId;
 } addr;
 
+// Struct to represent a 3D vector
 struct Vector3
 {
-	float x;
-	float y;
-	float z;
+    float x;
+    float y;
+    float z;
 };
