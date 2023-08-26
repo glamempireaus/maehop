@@ -7,7 +7,7 @@
 ### **Usage Instructions:**
 1. [Download the latest release](https://github.com/glamempireaus/maehop/releases/) or compile the source code yourself.
 2. Launch the application and press `F4`.
-3. Enjoy the benefits!
+3. Farm clips.
 
 ### **Setup Guide:**
 1. Ensure your Integrated Development Environment (IDE) is set to use a Multibyte Character Set.
