@@ -2,170 +2,118 @@
 #include <iostream>
 #include <TlHelp32.h>
 #include <string>
-
 #include "hijacker.h"
 
-OBJECT_ATTRIBUTES InitObjectAttributes(PUNICODE_STRING name, ULONG attributes, HANDLE hRoot, PSECURITY_DESCRIPTOR security)
+// Initializes the OBJECT_ATTRIBUTES structure.
+OBJECT_ATTRIBUTES InitializeObjectAttributes(PUNICODE_STRING name, ULONG attributes, HANDLE hRoot, PSECURITY_DESCRIPTOR security)
 {
-	OBJECT_ATTRIBUTES object;
-
-	object.Length = sizeof(OBJECT_ATTRIBUTES);
-	object.ObjectName = name;
-	object.Attributes = attributes;
-	object.RootDirectory = hRoot;
-	object.SecurityDescriptor = security;
-
-	return object;
-}
-
-SYSTEM_HANDLE_INFORMATION* hInfo;
-
-HANDLE procHandle = NULL;
-HANDLE hProcess = NULL;
-HANDLE HijackedHandle = NULL;
-
-DWORD GetPID(LPCSTR procName)
-{
-	HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, false);
-	if (hSnap && hSnap != INVALID_HANDLE_VALUE)
-	{
-		PROCESSENTRY32 procEntry;
-
-		ZeroMemory(procEntry.szExeFile, sizeof(procEntry.szExeFile)); 
-
-		do
-		{
-			if (lstrcmpi(procEntry.szExeFile, procName) == NULL) {
-				return procEntry.th32ProcessID;
-				CloseHandle(hSnap);
-			}
-		} while (Process32Next(hSnap, &procEntry));
-	}
+    OBJECT_ATTRIBUTES objectAttr;
+    objectAttr.Length = sizeof(OBJECT_ATTRIBUTES);
+    objectAttr.ObjectName = name;
+    objectAttr.Attributes = attributes;
+    objectAttr.RootDirectory = hRoot;
+    objectAttr.SecurityDescriptor = security;
+    return objectAttr;
 }
 
 bool IsHandleValid(HANDLE handle)
 {
-	if (handle && handle != INVALID_HANDLE_VALUE)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+    return handle && handle != INVALID_HANDLE_VALUE;
 }
 
-void CleanUpAndExit(LPCSTR ErrorMessage)
+void CleanupResources(SYSTEM_HANDLE_INFORMATION*& hInfo, HANDLE& procHandle)
 {
-	delete[] hInfo;
-
-	procHandle ? CloseHandle(procHandle) : 0;
-	
-	std::cout << ErrorMessage << std::endl;
-		
-	system("pause");
+    delete[] hInfo;
+    hInfo = nullptr;
+    if (IsHandleValid(procHandle))
+    {
+        CloseHandle(procHandle);
+        procHandle = nullptr;
+    }
 }
+
 HANDLE HijackExistingHandle(DWORD dwTargetProcessId)
 {
-	HMODULE Ntdll = GetModuleHandleA("ntdll");
+    SYSTEM_HANDLE_INFORMATION* hInfo = nullptr;
+    HANDLE procHandle = nullptr;
+    HANDLE HijackedHandle = nullptr;
 
-	_RtlAdjustPrivilege RtlAdjustPrivilege = (_RtlAdjustPrivilege)GetProcAddress(Ntdll, "RtlAdjustPrivilege");
+    HMODULE Ntdll = GetModuleHandleA("ntdll");
+    if (!Ntdll) return nullptr;
 
-	boolean OldPriv;
+    // Get required functions from ntdll
+    _RtlAdjustPrivilege RtlAdjustPrivilege = (_RtlAdjustPrivilege)GetProcAddress(Ntdll, "RtlAdjustPrivilege");
+    _NtQuerySystemInformation NtQuerySystemInformation = (_NtQuerySystemInformation)GetProcAddress(Ntdll, "NtQuerySystemInformation");
+    _NtDuplicateObject NtDuplicateObject = (_NtDuplicateObject)GetProcAddress(Ntdll, "NtDuplicateObject");
+    _NtOpenProcess NtOpenProcess = (_NtOpenProcess)GetProcAddress(Ntdll, "NtOpenProcess");
 
-	RtlAdjustPrivilege(SeDebugPriv, TRUE, FALSE, &OldPriv);
+    if (!RtlAdjustPrivilege || !NtQuerySystemInformation || !NtDuplicateObject || !NtOpenProcess)
+    {
+        CleanupResources(hInfo, procHandle);
+        return nullptr; // Failed to load required functions.
+    }
 
-	_NtQuerySystemInformation NtQuerySystemInformation = (_NtQuerySystemInformation)GetProcAddress(Ntdll, "NtQuerySystemInformation");
+    BOOLEAN OldPriv;
+    RtlAdjustPrivilege(SeDebugPriv, TRUE, FALSE, &OldPriv);
 
-	_NtDuplicateObject NtDuplicateObject = (_NtDuplicateObject)GetProcAddress(Ntdll, "NtDuplicateObject");
+    OBJECT_ATTRIBUTES objAttributes = InitializeObjectAttributes(nullptr, 0, nullptr, nullptr);
+    CLIENT_ID clientID = {};
 
-	_NtOpenProcess NtOpenProcess = (_NtOpenProcess)GetProcAddress(Ntdll, "NtOpenProcess");
+    DWORD size = sizeof(SYSTEM_HANDLE_INFORMATION);
+    hInfo = new (std::nothrow) SYSTEM_HANDLE_INFORMATION[size];
 
-	OBJECT_ATTRIBUTES Obj_Attribute = InitObjectAttributes(NULL, NULL, NULL, NULL);
-	
-	CLIENT_ID clientID = { 0 };
+    if (!hInfo)
+    {
+        CleanupResources(hInfo, procHandle);
+        return nullptr; // Failed memory allocation.
+    }
 
-	DWORD size = sizeof(SYSTEM_HANDLE_INFORMATION);
+    NTSTATUS status;
+    do
+    {
+        delete[] hInfo;
+        size *= 1.5;
+        hInfo = new (std::nothrow) SYSTEM_HANDLE_INFORMATION[size];
 
-	hInfo = (SYSTEM_HANDLE_INFORMATION*) new byte[size];
+        if (!hInfo)
+        {
+            CleanupResources(hInfo, procHandle);
+            return nullptr; // Failed memory allocation.
+        }
 
-	ZeroMemory(hInfo, size);
+    } while ((status = NtQuerySystemInformation(SystemHandleInformation, hInfo, size, nullptr)) == STATUS_INFO_LENGTH_MISMATCH);
 
-	NTSTATUS NtRet = NULL;
+    if (!NT_SUCCESS(status))
+    {
+        CleanupResources(hInfo, procHandle);
+        return nullptr; // Failed NtQuerySystemInformation.
+    }
 
-	do
-	{
-		delete[] hInfo;
+    for (unsigned int i = 0; i < hInfo->HandleCount; i++)
+    {
+        if (!IsHandleValid((HANDLE)hInfo->Handles[i].Handle)) continue;
+        if (hInfo->Handles[i].ObjectTypeNumber != ProcessHandleType) continue;
 
-		size *= 1.5;
-		try
-		{
-			hInfo = (PSYSTEM_HANDLE_INFORMATION) new byte[size];
-		}
-		catch (std::bad_alloc)
-		{
-			CleanUpAndExit("Bad Heap Allocation");
-		}
-		Sleep(1);
+        clientID.UniqueProcess = (HANDLE)hInfo->Handles[i].ProcessId;
+        if (IsHandleValid(procHandle))
+        {
+            CloseHandle(procHandle);
+        }
+        status = NtOpenProcess(&procHandle, PROCESS_DUP_HANDLE, &objAttributes, &clientID);
+        if (!IsHandleValid(procHandle) || !NT_SUCCESS(status)) continue;
 
-	} while ((NtRet = NtQuerySystemInformation(SystemHandleInformation, hInfo, size, NULL)) == STATUS_INFO_LENGTH_MISMATCH);
+        status = NtDuplicateObject(procHandle, (HANDLE)hInfo->Handles[i].Handle, GetCurrentProcess(), &HijackedHandle, PROCESS_ALL_ACCESS, 0, 0);
+        if (!IsHandleValid(HijackedHandle) || !NT_SUCCESS(status)) continue;
 
-	if (!NT_SUCCESS(NtRet))
-	{
-		CleanUpAndExit("NtQuerySystemInformation Failed");
-	}
+        if (GetProcessId(HijackedHandle) == dwTargetProcessId)
+        {
+            CleanupResources(hInfo, procHandle);
+            return HijackedHandle; // Found the target handle.
+        }
+        CloseHandle(HijackedHandle);
+    }
 
-	for (unsigned int i = 0; i < hInfo->HandleCount; ++i)
-	{
-		static DWORD NumOfOpenHandles; 
-
-		GetProcessHandleCount(GetCurrentProcess(), &NumOfOpenHandles);
-
-		if (NumOfOpenHandles > 65)
-		{
-			CleanUpAndExit("Error Handle Leakage Detected"); 
-		}
-
-		if (!IsHandleValid((HANDLE)hInfo->Handles[i].Handle)) 
-		{
-			continue;
-		}
-
-		if (hInfo->Handles[i].ObjectTypeNumber != ProcessHandleType)
-		{
-			continue;
-		}
-
-		clientID.UniqueProcess = (DWORD*)hInfo->Handles[i].ProcessId;
-
-		procHandle ? CloseHandle(procHandle) : 0;
-
-		NtRet = NtOpenProcess(&procHandle, PROCESS_DUP_HANDLE, &Obj_Attribute, &clientID);
-		if (!IsHandleValid(procHandle) || !NT_SUCCESS(NtRet))
-		{
-			continue;
-		}
-
-		NtRet = NtDuplicateObject(procHandle, (HANDLE)hInfo->Handles[i].Handle, NtCurrentProcess, &HijackedHandle, PROCESS_ALL_ACCESS, 0, 0);
-		if (!IsHandleValid(HijackedHandle) || !NT_SUCCESS(NtRet))
-		{
-			continue;
-		}
-
-		if (GetProcessId(HijackedHandle) != dwTargetProcessId) 
-		{
-			CloseHandle(HijackedHandle);
-			continue;
-		}
-
-		hProcess = HijackedHandle;
-	
-		break;
-	}
-
-	CleanUpAndExit("Success");
-
-	return hProcess;
+    CleanupResources(hInfo, procHandle);
+    return nullptr; // Handle not found.
 }
-
 
