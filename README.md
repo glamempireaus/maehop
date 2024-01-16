@@ -2,7 +2,7 @@
 
 ### **Why is Maehop Undetected?**
 - Leverages Windows native functions to create a handle from another process. 
-- It guarantees undetection for both reading and writing operations because VAC (Valve Anti-Cheat) is not kernel-level.
+- It (mostly) guarantees undetection for both reading and writing operations because VAC (Valve Anti-Cheat) is not kernel-level.
 
 ### **Usage Instructions:**
 1. [Download the latest release](https://github.com/glamempireaus/maehop/releases/) or compile the source code yourself.
